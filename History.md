@@ -1,3 +1,8 @@
+0.2.23 / Adjusts ( marcelinhov2 )
+===================
+ * HistoryJS Fixed to work in IE's
+ * Adding var window.ROOT_FOLDER to work with the base_path
+ 
 0.2.23 / 2013-09-06
 ===================
  * Synchronizing with new Polvo
