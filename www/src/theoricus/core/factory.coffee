@@ -1,52 +1,75 @@
+###*
+  Core module
+  @module core
+###
+
 Model = require 'theoricus/mvc/model'
 View = require 'theoricus/mvc/view'
 Controller = require 'theoricus/mvc/controller'
 
+###*
+  Factory is responsible for loading/creating the MVC classes, templates and stylesheets using AMD loader.
+
+  @class Factory
+###
+
 module.exports = class Factory
 
+  ###*
+    Stores the loaded controllers for subsequent calls.
+    @property controllers {Array}
+  ###
   controllers: {}
 
-  ###
-  @param [theoricus.Theoricus] @the   Shortcut for app's instance
+  ###*
+  @class Factory
+  @constructor
+  @param the {Theoricus} Shortcut for app's instance
   ###
   constructor:( @the )->
     # sets the Factory inside Model class, statically
     Model.Factory = @
 
+  ###*
+  Loads and returns an instantiated {{#crossLink "Model"}} __Model__ {{/crossLink}} given the name. 
+
+  If a model by given name was not found, returns an instance of `AppModel`.
+
+  @method model
+  @param name {String} Model name.
+  @param init {Object} Default properties to be setted in the model instance.
+  @param fn {Function} Callback function returning the model instance.
+  ###
   @model=@::model=( name, init = {}, fn )->
     # console.log "Factory.model( '#{name}' )"
 
     classname = name.camelize()
     classpath = "app/models/#{name}".toLowerCase()
 
-    require ['app/models/app_model', classpath], ( AppModel, NewModel )=>
+    if (ModelClass = require classpath) is null
+      console.error "Model not found '#{classpath}'"
+      return fn null
 
-      model = new NewModel
+    unless (model = new ModelClass) instanceof Model
+      msg = "#{classpath} is not a Model instance, you probably forgot to "
+      msg += "extend thoricus/mvc/Model"
+      console.error msg
+      return fn null
 
-      # FIXME: This will throw an error on browser: "Uncaught TypeError: Expecting a function in instanceof check, but got #<Main>"
-      # 
-      # unless (model = new NewModel) instanceof Model
-      #   msg = "#{classpath} is not a Model instance - you probably forgot to "
-      #   msg += "extend thoricus/mvc/Model"
-      #   console.error msg
+    model.classpath = classpath
+    model.classname = classname
+    model[prop] = value for prop, value of init
 
-      # defaults to AppModel if given model is  is not found
-      # (cant see any sense on this, will probably be removed later)
-      model = new AppModel unless model?
+    fn model
 
-      model.classpath = classpath
-      model.classname = classname
-      model[prop] = value for prop, value of init
+  ###*
+  Loads and returns an instantiated {{#crossLink "View"}} __View__  {{/crossLink}} given the name. 
 
-      fn model
-    , (err)->
-      console.error 'Model not found: ' + classpath
-      fn null
+  If a {{#crossLink "View"}} __view__  {{/crossLink}} by given name was not found, returns an instance of `AppView`.
 
-  ###
-  Returns an instantiated [theoricus.mvc.View] View
-
-  @param [String] path  path to the view file
+  @method view
+  @param path {String} Path to the view file.
+  @param fn {Function} Callback function returning the view instance.
   ###
   view:( path, fn )->
     # console.log "Factory.view( '#{path}' )"
@@ -54,33 +77,39 @@ module.exports = class Factory
     classname = (parts = path.split '/').pop().camelize()
     namespace = parts[parts.length - 1]
     classpath = "app/views/#{path}"
-    
-    require ['app/views/app_view', classpath], ( AppView, View )=>
-      unless (view = new View) instanceof View
-        msg = "#{classpath} is not a View instance - you probably forgot to "
-        msg += "extend thoricus/mvc/View"
-        console.error msg
 
-      # defaults to AppView if given view is not found
-      # (cant see any sense on this, will probably be removed later)
-      view = new AppView unless view?
+    if (ViewClass = require classpath) is null
+      console.error "View not found '#{classpath}'"
+      return fn null
 
-      view._boot @the
-      view.classpath = classpath
-      view.classname = classname
-      view.namespace = namespace
+    unless (view = new ViewClass) instanceof View
+      msg = "#{classpath} is not a View instance, you probably forgot to "
+      msg += "extend thoricus/mvc/View"
+      console.error msg
+      return fn null
 
-      fn view
+    # defaults to AppView if given view is not found
+    # (cant see any sense on this, will probably be removed later)
+    view = new AppView unless view?
 
-    , (err)->
-      console.error 'View not found: ' + classpath
-      fn null
+    view._boot @the
+    view.classpath = classpath
+    view.classname = classname
+    view.namespace = namespace
+
+    fn view
 
 
-  ###
-  Returns an instantiated [theoricus.mvc.Controller] Controller
+  ###*
+  Returns an instantiated {{#crossLink "Controller"}}__Controller__{{/crossLink}} given the name.
 
-  @param [String] name  controller name
+  If the {{#crossLink "Controller"}}__controller__{{/crossLink}} was not loaded yeat, load it using AMD loader, otherwise, get it from `@controllers` object.
+
+  Throws an error if no controller is found.
+
+  @method controller
+  @param name {String} Controller name.
+  @param fn {Function} Callback function returning the controller instance.
   ###
   controller:( name, fn )->
     # console.log "Factory.controller( '#{name}' )"
@@ -92,47 +121,39 @@ module.exports = class Factory
       fn @controllers[ classpath ]
     else
 
-      require [classpath], ( Controller )=>
+      if (ControllerClass = require classpath) is null
+        console.error "Controller not found '#{classpath}'"
+        return fn null
 
-        unless (controller = new Controller) instanceof Controller
-          msg = "#{classpath} is not a Controller instance - you probably "
-          msg += "forgot to extend thoricus/mvc/Controller"
-          console.error msg
+      unless (controller = new ControllerClass) instanceof Controller
+        msg = "#{classpath} is not a Controller instance, you probably "
+        msg += "forgot to extend thoricus/mvc/Controller"
+        console.error msg
+        return fn null
 
-        controller.classpath = classpath
-        controller.classname = classname
-        controller._boot @the
+      controller.classpath = classpath
+      controller.classname = classname
+      controller._boot @the
 
-        @controllers[ classpath ] = controller
-        fn @controllers[ classpath ]
+      @controllers[ classpath ] = controller
+      fn @controllers[ classpath ]
 
-      , (err)->
-        console.error 'Controller not found: ' + classpath
-        fn null
+  ###*
+  Returns an AMD compiled template.
 
-  ###
-  Returns an AMD compiled template
+  @method template
+  @param path {String} Path to the template.
+  @param fn {Function} Callback function returning the template string.
 
-  @param [String] path  path to the template
+  @example
+
   ###
   @template=@::template=( path, fn )->
     # console.log "Factory.template( #{path} )"
-    require ['templates/' + path], ( template )->
-      fn template
-    , (err)->
-      console.error 'Template not found: ' + path
-      fn null
+    classpath = 'templates/' + path
 
-
-
-  ### Returns an AMD compiled style
-  
-  @param [String] path  path to the style
-  ###
-  @style=@::style=( path, fn )->
-    # console.log "Factory.template( #{path} )"
-    require ['styles/' + path], ( style )->
-      fn style
-    , (err)->
-      console.error 'Style not found: ' + path
-      fn null
+    if (template = require classpath) is null
+      console.error 'Template not found: ' + classpath
+      return fn null
+    
+    fn template

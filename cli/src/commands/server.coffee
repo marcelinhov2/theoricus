@@ -1,22 +1,26 @@
 path = require 'path'
-fork = (require 'child_process' ).fork
+fork = require('child_process').fork
+polvo = require 'polvo'
 
 Generator = require '../commands/generator'
 Destroyer = require '../commands/destroyer'
 REPL = require '../repl/repl'
-
 
 module.exports = class Server
   polvo: null
   repl: null
 
   constructor:( @the, options )->
-    return unless do @the.is_theoricus_app
+    return unless @the.is_theoricus_app()
 
-    process.on 'exit', => do @polvo.kill
+    process.on 'exit', => @polvo.close()
 
-    do @create_repl
-    do @fork_polvo
+    @create_repl()
+    @fork_polvo()
+
+    process.on 'SIGTERM', ->
+      @polvo.close()
+      process.exit()
 
   create_repl:->
     @repl = new REPL
@@ -26,16 +30,13 @@ module.exports = class Server
       new Destroyer @the, null, type, name, options, @repl
 
   fork_polvo:->
-    polvo_path = path.join @the.root, 'node_modules', 'polvo', 'bin', 'polvo'
-    @polvo = fork polvo_path, ['-ws'], cwd: @the.app_root
-    @polvo.on 'message', (data)=>
-      switch data.channel
-        when 'stdout' then @repl.log data.msg
-        when 'stderr' then @repl.error data.msg
-        else
-          if data.msg is 'server.started'
-            do @repl.start
+    options = watch: true, server: true, base: @the.app_root
+    @polvo = polvo options, out: @out, err: @err
 
-    process.on 'SIGTERM', ->
-      do @polvo.kill
-      do process.exit
+  out:( msg )=>
+    @repl.log msg
+    if msg.stripColors.charAt(0) is '♫'
+      @repl.start()
+
+  err:( msg )=>
+    @repl.error msg

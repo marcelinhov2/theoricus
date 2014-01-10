@@ -1,14 +1,20 @@
 .PHONY: docs
 
 THE=bin/the
-SELENIUM=tests/www/services/selenium-server-standalone-2.33.0.jar
+POLVO=node_modules/polvo/bin/polvo
+
+SELENIUM=tests/www/services/selenium-server-standalone-2.35.0.jar
 SAUCE_CONNECT=tests/www/services/Sauce-Connect.jar
 CHROME_DRIVER=tests/www/services/chromedriver
 
 CS=node_modules/coffee-script/bin/coffee
 MOCHA=node_modules/mocha/bin/mocha
 COVERALLS=node_modules/coveralls/bin/coveralls.js
-VERSION=`$(CS) scripts/bumper.coffee --version`
+
+MVERSION=node_modules/mversion/bin/version
+VERSION=`$(MVERSION) | sed -E 's/\* package.json: //g'`
+
+YUIDOC=node_modules/yuidocjs/lib/cli.js
 
 
 # SETTTING UP DEV ENV
@@ -17,29 +23,40 @@ VERSION=`$(CS) scripts/bumper.coffee --version`
 install_test_suite:
 	@mkdir -p tests/www/services
 
+	@echo '-----'
 	@echo 'Downloading Selenium..'
-	@curl -o tests/www/services/selenium-server-standalone-2.33.0.jar \
-		https://selenium.googlecode.com/files/selenium-server-standalone-2.33.0.jar
+	@curl -o tests/www/services/selenium-server-standalone-2.35.0.jar \
+		https://selenium.googlecode.com/files/selenium-server-standalone-2.35.0.jar
 	@echo 'Done.'
 
+	@echo '-----'
 	@echo 'Downloading Chrome Driver..'
 	@curl -o tests/www/services/chromedriver.zip \
-		https://chromedriver.googlecode.com/files/chromedriver_mac_26.0.1383.0.zip
+		https://chromedriver.googlecode.com/files/chromedriver_mac32_2.3.zip
 	@echo 'Done.'
+	
+	@echo '-----'
 	@echo 'Unzipping chromedriver..'
-	@cd tests/www/services/; unzip chromedriver.zip; rm chromedriver.zip; cd -
+	@cd tests/www/services/; unzip chromedriver.zip; \
+		rm chromedriver.zip; cd -
 	@echo 'Done.'
 
+	@echo '-----'
 	@echo 'Downloading Sauce Connect..'
 	@curl -o tests/www/services/sauceconnect.zip \
 		http://saucelabs.com/downloads/Sauce-Connect-latest.zip
+	
+	@echo '-----'
 	@echo 'Unzipping Sauce Connect..'
 	@cd tests/www/services/; unzip sauceconnect.zip; \
 		rm NOTICE.txt license.html sauceconnect.zip; cd -
+	@echo '-----'
 	@echo 'Done.'
+	@echo 
 
 
 setup: install_test_suite
+	@echo '-----'
 	npm link
 
 
@@ -57,8 +74,28 @@ build:
 # GENERATING DOCS
 #-------------------------------------------------------------------------------
 
-docs:
-	# to be merged
+# docs generation
+docs.www:
+	cd www/src && \
+	../../$(YUIDOC) \
+	--syntaxtype coffee \
+	-e .coffee \
+	-o ../../docs/www \
+	-t ../../docs/bootstrap-theme \
+	-H ../../docs/bootstrap-theme/helpers/helpers.js \
+	.
+
+docs.www.server:
+	cd www/src && \
+	../../$(YUIDOC) \
+	--syntaxtype coffee \
+	-e .coffee \
+	-o ../../docs/www \
+	-t ../../docs/bootstrap-theme \
+	-H ../../docs/bootstrap-theme/helpers/helpers.js \
+	--server \
+	.
+
 
 
 # TESTS
@@ -77,10 +114,24 @@ test.build.prod:
 	@echo 'Building app before testing..'
 	@$(THE) -r --base tests/www/probatus > /dev/null
 
-test.build.dev:
+test.build.split:
 	@echo 'Compiling app before testing..'
-	@$(THE) -c --base tests/www/probatus > /dev/null
+	@# @$(THE) -c --base tests/www/probatus > /dev/null
+	@$(POLVO) -cxb tests/www/probatus > /dev/null
 
+
+# NORMALIZING COVERAGE AND POSTING TO COVERALLS
+test.cover.normalize:
+	@sed -i.bak \
+		"s/^.*public\/__split__\/theoricus\/www\/src\/theoricus/SF:theoricus/g" \
+		tests/www/coverage/lcov.info
+
+test.cover.publish:
+	@cd tests/www/probatus/public/__split__/theoricus/www/src && \
+		cat ../../../../../../coverage/lcov.info | \
+		../../../../../../../../$(COVERALLS)
+	
+	@cd ../../../../../../../../	
 
 # TESTING LOCALLY
 test: test.build.prod
@@ -90,69 +141,54 @@ test: test.build.prod
 	--timeout 600000 \
 	tests/www/tests/runner.coffee --env='local'
 
-test.coverage: test.build.dev
+test.cover: test.build.split
 	@$(MOCHA) --compilers coffee:coffee-script \
 	--ui bdd \
 	--reporter spec \
 	--timeout 600000 \
 	tests/www/tests/runner.coffee --env='local' --coverage
 
-test.coveralls: test.coverage
-	@sed -i.bak \
-		"s/^.*public\/js\/theoricus/SF:theoricus/g" \
-		tests/www/coverage/lcov.info
+test.coveralls: test.cover test.cover.normalize test.cover.publish
 
-	@cd tests/www/probatus/public/js && \
-		cat ../../../coverage/lcov.info | ../../../../../$(COVERALLS)
-	
-	@cd ../../../../../
-
-test.coverage.preview: test.coverage
+test.cover.preview: test.cover
 	@cd tests/www/coverage/lcov-report; python -m SimpleHTTPServer 8080; cd -
 
 
 # TESTING ON SAUCE LABS
 
 # NOTE: The `--bail` option is hidden until Mocha fix the hooks execution
-# 	https://github.com/visionmedia/mocha/issues/937
+#   https://github.com/visionmedia/mocha/issues/937
 
-test.saucelabs: test.build.prod
+test.sauce: test.build.prod
 	@$(MOCHA) --compilers coffee:coffee-script \
 	--ui bdd \
 	--reporter spec \
 	--timeout 600000 \
 	tests/www/tests/runner.coffee --env='sauce labs'
 
-test.saucelabs.coverage: test.build.dev
+test.sauce.cover: test.build.split
 	@$(MOCHA) --compilers coffee:coffee-script \
 	--ui bdd \
 	--reporter spec \
 	--timeout 600000 \
 	tests/www/tests/runner.coffee --env='sauce labs' --coverage
 
-test.saucelabs.coveralls: test.saucelabs.coverage
-	@sed -i.bak \
-		"s/^.*public\/js\/theoricus/SF:theoricus/g" \
-		tests/www/coverage/lcov.info
+test.sauce.coveralls: test.sauce.cover test.cover.normalize test.cover.publish
 
-	@cd tests/www/probatus/public/js && \
-		cat ../../../coverage/lcov.info | ../../../../../$(COVERALLS)
-
-	@cd ../../../../../
 
 test.travis:
 # Technique (skipping pull requests) borrowed from WD:
-# 	https://github.com/admc/wd/blob/master/Makefile
+#   https://github.com/admc/wd/blob/master/Makefile
 ifdef TRAVIS
 # secure env variables are not available for pull reuqests
 # so you won't be able to run test against Sauce on these
 ifneq ($(TRAVIS_PULL_REQUEST),false)
 	@echo 'Skipping Sauce Labs tests as this is a pull request'
 else
-	@make test.saucelabs
+	@make test.coveralls
 endif
 else
-	@make test.saucelabs
+	@make test.coveralls
 endif
 
 
@@ -160,13 +196,13 @@ endif
 #-------------------------------------------------------------------------------
 
 bump.minor:
-	$(CS) scripts/bumper.coffee --minor
+	@$(MVERSION) minor
 
 bump.major:
-	$(CS) scripts/bumper.coffee --major
+	@$(MVERSION) major
 
 bump.patch:
-	$(CS) scripts/bumper.coffee --patch
+	@$(MVERSION) patch
 
 
 # PUBLISHING / RE-PUBLISHING

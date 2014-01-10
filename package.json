@@ -1,9 +1,15 @@
 {
   "name": "theoricus",
-  "version": "0.2.21",
-  "author": "Anderson Arboleya <anderson@arboleya.me>",
+  "version": "0.2.23",
+  "author": {
+    "name": "Anderson Arboleya",
+    "email": "anderson@arboleya.me"
+  },
   "contributors": [
-    "Henrique Matias <hems.inlet@gmail.com>"
+    {
+      "name": "Henrique Matias",
+      "email": "hems.inlet@gmail.com"
+    }
   ],
   "description": "Tiny MV(C) implementation for client side projects.",
   "keywords": [
@@ -15,8 +21,7 @@
     "lib": "./lib/"
   },
   "scripts": {
-    "test": "make test",
-    "postinstall": "coffee scripts/postinstall.coffee"
+    "test": "make test"
   },
   "repository": {
     "type": "git",
@@ -35,17 +40,26 @@
     "fs-util": "0.3.x",
     "lodash": "1.3.x",
     "optimist": "0.6.x",
-    "polvo": "0.4.x",
+    "polvo": "0.5.x",
     "source-map-support": "0.2.x",
-    "snapshooter": "0.2.x",
+    "snapshooter": "0.3.x",
     "istanbul-middleware": "0.1.x",
     "express": "3.3.x",
-    "coveralls": "2.0.x"
+    "coveralls": "2.2.x"
   },
   "devDependencies": {
     "chai": "1.7.x",
     "mocha": "1.12.x",
-    "request": "2.22.x",
-    "wd": "0.0.32"
-  }
+    "request": "2.27.x",
+    "yuidocjs": "0.3.x",
+    "wd": "0.1.x",
+    "mversion": "0.2.x"
+  },
+  "readme": "![Theoricus - Tiny MV(C) implementation for client side projects](assets/theoricus.png)\n\n[![Stories in Ready](https://badge.waffle.io/theoricus/theoricus.png)](http://waffle.io/theoricus/theoricus)  \n\n[![Build Status](https://secure.travis-ci.org/theoricus/theoricus.png?branch=master)](http://travis-ci.org/theoricus/theoricus) [![Coverage Status](https://coveralls.io/repos/theoricus/theoricus/badge.png)](https://coveralls.io/r/theoricus/theoricus)\n\n[![Dependency Status](https://gemnasium.com/theoricus/theoricus.png)](https://gemnasium.com/theoricus/theoricus) [![NPM version](https://badge.fury.io/js/theoricus.png)](http://badge.fury.io/js/theoricus)\n\n<!--\n  [![Selenium Test Status](https://saucelabs.com/buildstatus/theoricus)](https://saucelabs.com/u/theoricus)\n-->\n\n# About\n\nTheoricus uses simple naming conventions (as you see in rails and many others),\nwith a powerful [build system](http://github.com/serpentem/polvo/polvo) behind\nit. There's also a naviagation mechanism built to let your *free* to code your\n**shit** instead of handling url's manually.\n\nIt's in a very alpha version, use at your own risk.\n\nHave fun. :)\n\n# Features\n * Routes system\n * Server-side rendering\n * Generators and destroyers for code scaffolding\n * I/O transitions for all Views\n * Convention over configuration *([+](http://en.wikipedia.org/wiki/Convention_over_configuration))*\n * Automagic naviagation mechanism\n * Powerful build system *(on top of [Polvo](http://github.com/serpentem/polvo/polvo)*)\n * Simplistic JSON-Rest interface for models\n\n# Supported Languages\n\n[Polvo](https://github.com/polvo/polvo) is the build system behind Theoricus,\nand so you can use any language it supports - full list [here](https://github.com/polvo/polvo#plugins-supported-languages).\n\n# Issues\nDo not hesitate to open a feature request or a bug report.\n> [https://github.com/theoricus/theoricus/issues](https://github.com/theoricus/theoricus/issues)\n\n# Mailing List\nA place to talk about it, ask anything, get in touch. Luckily you'll be answered\nsooner than later.\n\n> [https://groups.google.com/group/theoricus](https://groups.google.com/group/theoricus)\n\n## Dev Mailing List\n\nGot your hands into the source? We're here to help you.\n\n> [https://groups.google.com/group/theoricus-dev](https://groups.google.com/group/theoricus-dev)\n\n\n# Docs\n  - [Installing](#installing)\n  - [Help](#help)\n    - [Scaffolding new app](#scaffolding)\n    - [Starting up](#starting-up)\n\n## More\n\n<!--  - [Demo Application](https://github.com/theoricus/theoricus-demo-app) -->\n  - [Contributing](https://github.com/theoricus/theoricus/blob/master/CONTRIBUTING.md)\n  - [Showcase](https://github.com/theoricus/theoricus/wiki/showcase)\n  - [Changelog](https://github.com/theoricus/theoricus/blob/master/History.md)\n  - [License](https://github.com/theoricus/theoricus/blob/master/LICENSE)\n\n<!--\n  - [Compatibility](#compatibility)\n-->\n\n<a name=\"installing\" />\n# Installing\n\n````bash\nnpm install -g theoricus\n````\n\n<a name=\"help\" />\n# Help\n\nTheoricus help screen.\n\n````bash\nUsage:\n  the [options] [params]\n\nOptions:\n  -n, --new       Creates a new app                                                  \n  -g, --generate  Generates a new model, view or controller                          \n  -d, --destroy   Destroys a new model, view, or controller                          \n  -s, --start     Starts app in dev mode at localhost                                \n  -c, --compile   Compiles app in dev mode                                           \n  -r, --release   Releases app for production                                        \n  -p, --preview   Releases app for production at localhost                           \n  -i, --index     Saving indexed version of app using `Snapshooter`                  \n  -v, --version   Shows theoricus version                                            \n  -h, --help      Shows this help screen                                             \n  --url           Use with `-i` to inform a specif url to crawl                      \n  --snapshooter   Use with `-i` to pass custom flags to `Snapshooter`                \n  --rf            Use with -d [view|mvc] for deleting the whole view folder          \n  --src           Use with -n for use a specific theoricus version as a git submodule\n  --nogitsub      Use with --src for avoiding automatic git submodule setup          \n  --base          Application base directory (in case you're inside it)              \n\n\nExamples:\n\n  • Creating new app\n    the -n <app-name>\n    the -n <app-name> --src <gh-user>/<gh-repo>#<repo-branch>\n\n  • Generating models, views and controllers\n    the -g model <model-name>\n    the -g view <controller-name>/<view-name>\n    the -g controller <controller-name>\n    the -g mvc <controller-name>\n       * Models and views names are singular, controllers are plural\n\n  • Destroying models, views and controllers\n    the -d model <model-name>\n    the -d view <controller-name>/<view-name>\n    the -d controller <controller-name>\n    the -d mvc <controller-name>\n    the -d mvc <controller-name> --rf\n       * Models and views names are singular, controllers are plural\n````\n\n<a name=\"getting-started\" />\n## Scaffolding\n\nTo scaffold a new working project:\n\n````bash\nthe -n myawesomeapp\n````\n\nIt'll produce the following structure, which contains a default page section and\n`404` Not Found error page:\n\n````bash\nmyawesomeapp\n├── README.md\n├── package.json\n├── polvo.yml\n├── public\n│   ├── app.css\n│   ├── app.js\n│   └── index.html\n└── src\n    ├── app\n    │   ├── app.coffee\n    │   ├── config\n    │   │   ├── routes.coffee\n    │   │   └── settings.coffee\n    │   ├── controllers\n    │   │   ├── app_controller.coffee\n    │   │   ├── ovos.coffee\n    │   │   └── pages.coffee\n    │   ├── models\n    │   │   ├── app_model.coffee\n    │   │   ├── ovo.coffee\n    │   │   └── page.coffee\n    │   └── views\n    │       ├── app_view.coffee\n    │       ├── ovos\n    │       │   └── index.coffee\n    │       └── pages\n    │           ├── container.coffee\n    │           ├── index.coffee\n    │           └── notfound.coffee\n    ├── styles\n    │   ├── ovos\n    │   │   └── index.styl\n    │   ├── pages\n    │   │   ├── container.styl\n    │   │   ├── index.styl\n    │   │   └── notfound.styl\n    │   └── shared\n    │       └── _bootstrap.styl\n    └── templates\n        ├── ovos\n        │   └── index.jade\n        └── pages\n            ├── container.jade\n            ├── index.jade\n            └── notfound.jade\n````\n\n<a name=\"starting-up\" />\n## Starting up\n\n````bash\ncd myawesomeapp\nthe -s\n````\n\nVisit the url [http://localhost:11235](http://localhost:11235) and you should\nsee a success status.\n\n<!--\n<a name=\"compatibility\" />\n# Compatibility\n\n[![Selenium Test Status](https://saucelabs.com/browser-matrix/theoricus.svg)](https://saucelabs.com/u/theoricus)\n-->\n\n# License\n\nThe MIT License (MIT)\n\nCopyright (c) 2013 Anderson Arboleya\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software is furnished to do so,\nsubject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS\nFOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR\nCOPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER\nIN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\nCONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+  "readmeFilename": "README.md",
+  "bugs": {
+    "url": "https://github.com/serpentem/theoricus/issues"
+  },
+  "_id": "theoricus@0.2.23",
+  "_from": "theoricus@0.2.23"
 }
